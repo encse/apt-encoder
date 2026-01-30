@@ -46,7 +46,10 @@ def synthesize_am_wav(
     if samples_per_line <= 0:
         raise ValueError("seconds_per_line too small for given sample rate.")
 
-    total_samples = height * samples_per_line
+    silence_seconds = 1.0
+    silence_samples = int(round(fs * silence_seconds))
+
+    total_samples = silence_samples + height * samples_per_line
     audio = np.zeros(total_samples, dtype=np.float32)
 
     # Precompute time vector for one line
@@ -65,7 +68,7 @@ def synthesize_am_wav(
             amp = amplitude_floor + (1.0 - amplitude_floor) * amp
 
         line_audio = amp * carrier  # AM: amplitude follows pixel intensity
-        start = row * samples_per_line
+        start = silence_samples + row * samples_per_line
         audio[start : start + samples_per_line] = line_audio
 
     # Normalize to int16 safely (avoid clipping, preserve relative levels)
