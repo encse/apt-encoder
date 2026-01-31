@@ -2,8 +2,7 @@
 
 A generator for synthetic **NOAA Automatic Picture Transmission (APT)** signals.
 
-This project produces standards-aligned APT images and modulates them onto
-a 2400 Hz AM subcarrier.
+Produces standards-aligned APT images and modulates them onto a 2400 Hz AM subcarrier.
 
 The implementation follows the APT line structure described in the [NOAA KLM
 User’s Guide]((https://web.archive.org/web/20070316190349/http://www2.ncdc.noaa.gov/docs/klm/html/c4/sec4-2.htm#f423-3)
