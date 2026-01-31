@@ -24,14 +24,14 @@ pip install numpy pillow
 Single image (Channel B is black):
 
 ```bash
-python apt_builder.py input.jpg apt.png
+python3 apt_builder.py input.jpg apt.png
 ```
 ![apt_1.jpg](apt_1.jpg)
 
 Dual-channel transmission:
 
 ```bash
-python apt_builder.py image_a.jpg apt.png --input-png-b image_b.jpg
+python3 apt_builder.py image_a.jpg apt.png --input-png-b image_b.jpg
 ```
 
 ![apt_2.jpg](apt_2.jpg)
