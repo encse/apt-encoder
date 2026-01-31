@@ -49,7 +49,7 @@ def synthesize_am_wav(
     silence_seconds = 1.0
     silence_samples = int(round(fs * silence_seconds))
 
-    total_samples = silence_samples + height * samples_per_line
+    total_samples = silence_samples + height * samples_per_line + silence_samples
     audio = np.zeros(total_samples, dtype=np.float32)
 
     # Precompute time vector for one line
