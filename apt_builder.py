@@ -48,40 +48,19 @@ TELEM_WIDTH = 45
 CHANNEL_ID_A = "3A"
 CHANNEL_ID_B = "4"
 
-def make_sync_a(height: int) -> np.ndarray:
-    one_line = np.full(SYNC_WIDTH, LOW, dtype=np.uint8)
+def make_sync(height: int, pattern) -> np.ndarray:
+    line = np.full(SYNC_WIDTH, LOW, dtype=np.uint8)
 
-    start = 4
-    cycles = 7
-    samples_per_cycle = FS_VIDEO // 1040  # expected 4
+    repeated_pattern = np.tile(pattern, 7)
+    line[4:4 + repeated_pattern.size] = repeated_pattern
 
-    tone_len = cycles * samples_per_cycle  # 28
-    end = start + tone_len  # 32
-
-    one_cycle = np.array([HIGH, HIGH, LOW, LOW], dtype=np.uint8)
-    one_line[start:end] = np.tile(one_cycle, cycles)
-
-    # Remaining SYNC samples stay LOW.
-    return np.repeat(one_line[np.newaxis, :], height, axis=0)
-
-
-def make_sync_b(height: int) -> np.ndarray:
-    one_line = np.full(SYNC_WIDTH, LOW, dtype=np.uint8)
-
-    start = 4
-    samples_per_period = FS_VIDEO // 832  # expected 5
-    periods = 7  # 4 + 7*5 = 39
-
-    one_period = np.array([HIGH, HIGH, HIGH, LOW, LOW], dtype=np.uint8)
-    one_line[start:start + periods * samples_per_period] = np.tile(one_period, periods)
-
-    return np.repeat(one_line[np.newaxis, :], height, axis=0)
+    return np.repeat(line[None, :], height, axis=0)
 
 def make_telemetry(height: int, channel_id: int) -> np.ndarray:
     TELEM_BLOCK_LINES = 8
     TELEM_PERIOD = TELEM_BLOCK_LINES * 16
     BASE_WEDGES = [31, 63, 95, 127, 159, 191, 224, 255, 0]
-    channel_wedge = CHANNEL_ID_TO_WEDGE = {
+    channel_wedge = {
         "1":  BASE_WEDGES[0],
         "2":  BASE_WEDGES[1],
         "3A": BASE_WEDGES[2],
@@ -124,20 +103,20 @@ def make_space(height: int, reference_value: int):
 
 def build_channel(
     image: np.ndarray,
-    which: str,
+    channel: str,
 ) -> np.ndarray:
     h = image.shape[0]
 
-    if which == "a":
-        sync = make_sync_a(h)
+    if channel == "a":
+        sync = make_sync(h, [HIGH, HIGH, LOW, LOW])
         space = make_space(h, LOW)
         tlm = make_telemetry(h, CHANNEL_ID_A)
-    elif which == "b":
-        sync = make_sync_b(h)
+    elif channel == "b":
+        sync = make_sync(h, [HIGH, HIGH, HIGH, LOW, LOW])
         space = make_space(h, HIGH)
         tlm = make_telemetry(h, CHANNEL_ID_B)
     else:
-        raise ValueError("which must be 'a' or 'b'")
+        raise ValueError("channel must be 'a' or 'b'")
 
     return np.hstack([sync, space, image, tlm])
 
@@ -180,7 +159,7 @@ def main():
     image_a = prepare_image(args.input_png_a)
 
     if args.input_png_b is None:
-        image_b = np.zeros((1, IMG_WIDTH), dtype=np.uint8)  # placeholder; will be padded
+        image_b = np.zeros((1, IMG_WIDTH), dtype=np.uint8)
         image_b_height = 0
     else:
         image_b = prepare_image(args.input_png_b)
@@ -194,7 +173,6 @@ def main():
         image_b = np.zeros((out_height, IMG_WIDTH), dtype=np.uint8)
     else:
         image_b = pad_image_to_height(image_b, out_height)
-
 
     chA = build_channel(image_a, "a")
     chB = build_channel(image_b, "b")
