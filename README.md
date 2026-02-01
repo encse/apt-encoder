@@ -46,14 +46,6 @@ lines to preserve line alignment.
 python apt_modulator.py apt_1.jpg out.wav
 ```
 
-Default modulation parameters:
-
-| Parameter   | Value      |
-| ----------- | ---------- |
-| Sample rate | 48 kHz     |
-| Carrier     | 2400 Hz    |
-| Modulation  | AM         |
-| Bit depth   | 16-bit PCM |
-| Channels    | Mono       |
+https://www.youtube.com/watch?v=yC8a7aWtD-E
 
 The resulting file can be opened directly in decoders such as  **SatDump**.
