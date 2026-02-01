@@ -1,4 +1,4 @@
-# NOAA APT Signal Generator
+# APT Signal Generator
 
 A generator for synthetic **NOAA Automatic Picture Transmission (APT)** signals.
 
