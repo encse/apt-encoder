@@ -105,46 +105,16 @@ def fm_modulate_iq_cs16(
     iq[0::2] = np.clip(i * scale, -32768.0, 32767.0).astype(np.int16)
     iq[1::2] = np.clip(q * scale, -32768.0, 32767.0).astype(np.int16)
 
-    out_path.write_bytes(iq.tobytes())
+    write_iq_wav_pcm16(iq, fs, out_path)
 
 
-def fm_modulate_iq_cf32(
-    audio: np.ndarray,
-    fs: int,
-    deviation_hz: float,
-    out_path: Path,
-    carrier_offset_hz: float = 0.0,
-    iq_gain: float = 0.9,
-) -> None:
-    """
-    FM modulate audio into complex baseband IQ and write CF32 (interleaved float32).
-
-    Output format:
-        float32 little-endian interleaved IQ: I0,Q0,I1,Q1,...
-
-    iq_gain scales the IQ magnitude (<= 1.0 recommended).
-    """
-    if fs <= 0:
-        raise ValueError("fs must be > 0")
-    if deviation_hz < 0:
-        raise ValueError("deviation_hz must be >= 0")
-    if not (0.0 < iq_gain <= 1.0):
-        raise ValueError("iq_gain must be in (0, 1]")
-
-    audio = np.clip(audio.astype(np.float32), -1.0, 1.0)
-
-    f_inst = carrier_offset_hz + deviation_hz * audio  # Hz
-    phase_inc = (2.0 * math.pi * f_inst) / float(fs)   # rad/sample
-    phase = np.cumsum(phase_inc, dtype=np.float64)
-
-    i = (np.cos(phase).astype(np.float32) * iq_gain)
-    q = (np.sin(phase).astype(np.float32) * iq_gain)
-
-    iq = np.empty(i.size * 2, dtype=np.float32)
-    iq[0::2] = i
-    iq[1::2] = q
-
-    out_path.write_bytes(iq.tobytes())
+def write_iq_wav_pcm16(iq_interleaved: np.ndarray, fs: int, out_path: Path) -> None:
+    # iq_interleaved: int16 array [I0, Q0, I1, Q1, ...]
+    with wave.open(str(out_path), "wb") as wf:
+        wf.setnchannels(2)          # I and Q
+        wf.setsampwidth(2)          # int16
+        wf.setframerate(fs)
+        wf.writeframes(iq_interleaved.astype("<i2", copy=False).tobytes())
 
 
 def main() -> None:
@@ -173,37 +143,17 @@ def main() -> None:
         help="Output IQ amplitude scaling before int16 conversion (0..1, default: 0.9)",
     )
 
-    parser.add_argument(
-        "--format",
-        choices=["cs16", "cf32"],
-        default="cs16",
-        help="Output IQ sample format (default: cs16)",
-    )
-
-
     args = parser.parse_args()
     audio, fs = read_wav_mono(args.input_wav)
 
-    if args.format == "cs16":
-        fm_modulate_iq_cs16(
-            audio=audio,
-            fs=fs,
-            deviation_hz=args.deviation_hz,
-            carrier_offset_hz=args.carrier_offset_hz,
-            iq_gain=args.iq_gain,
-            out_path=args.output_cs16,
-        )
-    else:
-        fm_modulate_iq_cf32(
-            audio=audio,
-            fs=fs,
-            deviation_hz=args.deviation_hz,
-            carrier_offset_hz=args.carrier_offset_hz,
-            iq_gain=args.iq_gain,
-            out_path=args.output_cs16,
-        )
-        
-    print(f"Output format: {args.format}")
+    fm_modulate_iq_cs16(
+        audio=audio,
+        fs=fs,
+        deviation_hz=args.deviation_hz,
+        carrier_offset_hz=args.carrier_offset_hz,
+        iq_gain=args.iq_gain,
+        out_path=args.output_cs16,
+    )
     print(f"Wrote IQ: {args.output_cs16} ({audio.size} samples, {audio.size / fs:.3f} s)")
 
 if __name__ == "__main__":
